@@ -23,12 +23,14 @@ export const typeDefs = gql`
     email: String
     password: String
     jwt: String
+    movies: [Movie]
   }
 
   type Movie {
     id: Int!
     title: String!
     poster: String
+    externalId: Int
   }
 
   type Error {
@@ -45,21 +47,32 @@ export const typeDefs = gql`
     error: Error
   }
 
+  type AddFavoritePayload {
+    favorites: [Movie]
+    error: Error
+  }
+
   # The "Query" type is the root of all GraphQL queries.
   # (A "Mutation" type will be covered later on.)
   type Query {
     books: [Book]
     authors: [Author]
     movies: [Movie]
+    movie(id: Int!): Movie
+    search(term: String): [Movie]
+    similar(externalId: Int!): [Movie]
     author(id: Int): Author
+    users: [User]
     me: User
     serverTime: String
+    favorites: [Movie]
   }
 
   type Mutation {
     addAuthor(firstName: String!, lastName: String!): Author
     login(email: String!, password: String!): LoginPayload
     findMovies(title: String): [Movie]
-    addMovie(title: String!, poster: String): AddMoviePayload
+    addMovie(title: String!, poster: String, externalId: Int): AddMoviePayload
+    addFavorite(movieId: Int!): AddFavoritePayload
   }
 `;

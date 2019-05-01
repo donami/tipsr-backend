@@ -1,6 +1,7 @@
-import { Author, Movie } from './connectors';
+import { Author, Movie, User } from './connectors';
 import jwt from 'jsonwebtoken';
 import fetch from 'node-fetch';
+import { Op } from 'sequelize';
 
 import { JWT_SECRET, API_KEY } from '../config/secrets';
 
@@ -13,6 +14,16 @@ const API_POSTER_SIZES = {
   extraLarge: 'w500',
   huge: 'w780',
   original: 'original',
+};
+
+const debugModel = model => {
+  for (let assoc of Object.keys(model.associations)) {
+    for (let accessor of Object.keys(model.associations[assoc].accessors)) {
+      console.log(
+        model.name + '.' + model.associations[assoc].accessors[accessor] + '()'
+      );
+    }
+  }
 };
 
 // This is a (sample) collection of books we'll be able to query
@@ -46,6 +57,11 @@ const authenticated = next => (root, args, context, info) => {
 // Resolvers define the technique for fetching the types in the
 // schema.  We'll retrieve books from the "books" array above.
 export const resolvers = {
+  User: {
+    movies(user) {
+      return user.getMovies();
+    },
+  },
   Query: {
     books: () => books,
     author(_, args) {
@@ -57,7 +73,51 @@ export const resolvers = {
     movies() {
       return Movie.findAll();
     },
+    movie(root, { id }) {
+      return Movie.findByPk(id);
+    },
+    users() {
+      return User.findAll();
+    },
+    async search(root, { term }) {
+      if (!term || !term.length) {
+        return null;
+      }
+
+      return Movie.findAll({
+        where: {
+          title: {
+            [Op.iLike]: `%${term}%`,
+          },
+        },
+      });
+    },
+    async similar(root, { externalId }) {
+      const url = `https://api.themoviedb.org/3/movie/${externalId}/similar?api_key=${API_KEY}&language=en-US&page=1`;
+      const results = await fetch(url);
+
+      const json = await results.json();
+
+      if (json.total_results <= 0) {
+        return [];
+      }
+
+      return json.results.map(movie => {
+        return {
+          id: movie.id,
+          title: movie.title,
+          poster: `${API_BASE_URL}${API_POSTER_SIZES.large}${
+            movie.poster_path
+          }`,
+        };
+      });
+    },
     me: authenticated((root, args, context) => context.user),
+    favorites: authenticated(async (root, args, context) => {
+      const user = await User.findByPk(context.user.id);
+
+      return user.getMovies();
+    }),
     serverTime: () => new Date(),
   },
   Mutation: {
@@ -117,6 +177,7 @@ export const resolvers = {
         const movie = await Movie.create({
           title: args.title,
           poster: args.poster,
+          externalId: args.externalId,
         });
         return { movie };
       } catch (error) {
@@ -135,5 +196,20 @@ export const resolvers = {
         return { error: { message: error.message } };
       }
     },
+    addFavorite: authenticated(async (root, args, { user }) => {
+      const userData = await User.findByPk(user.id);
+      const movie = await Movie.findByPk(args.movieId);
+
+      if (!movie) {
+        throw new Error('Unable to find movie.');
+      }
+
+      await userData.addMovie(movie);
+      const favorites = await userData.getMovies();
+
+      return {
+        favorites,
+      };
+    }),
   },
 };
