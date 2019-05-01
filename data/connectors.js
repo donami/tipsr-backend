@@ -35,6 +35,11 @@ const MovieModel = db.define('movie', {
   externalId: { type: Sequelize.STRING },
 });
 
+const ListModel = db.define('list', {
+  title: { type: Sequelize.STRING },
+});
+
+const ListMoviesModel = db.define('listMovies', {});
 const UserMoviesModel = db.define('userMovies', {});
 
 AuthorModel.hasMany(PostModel, { as: 'posts' });
@@ -43,10 +48,17 @@ PostModel.belongsTo(AuthorModel);
 UserModel.belongsToMany(MovieModel, { through: UserMoviesModel });
 MovieModel.belongsToMany(UserModel, { through: UserMoviesModel });
 
+UserModel.hasMany(ListModel, { as: 'lists' });
+ListModel.belongsTo(UserModel);
+
+ListModel.belongsToMany(MovieModel, { through: ListMoviesModel });
+MovieModel.belongsToMany(ListModel, { through: ListMoviesModel });
+
 const Author = db.models.author;
 const Post = db.models.post;
 const Movie = db.models.movie;
 const User = db.models.user;
+const List = db.models.list;
 
 // modify the mock data creation to also create some views:
 // casual.seed(123);
@@ -70,8 +82,18 @@ db.sync({ force: true }).then(async () => {
     externalId: 122,
   });
 
-  // console.log(firstUser.setMovies);
   await firstUser.setMovies([testMovie]);
+
+  const firstList = await ListModel.create({
+    title: 'My Favorite Movies',
+  });
+  const secondList = await ListModel.create({
+    title: 'My Next Best Movies',
+  });
+
+  await firstUser.setLists([firstList, secondList]);
+
+  await firstList.setMovies([testMovie]);
 
   await PostModel.create({
     title: 'A Post',
@@ -81,4 +103,4 @@ db.sync({ force: true }).then(async () => {
   return Promise.resolve();
 });
 
-export { Author, Post, Movie, User };
+export { Author, Post, Movie, User, List };

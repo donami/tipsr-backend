@@ -1,4 +1,4 @@
-import { Author, Movie, User } from './connectors';
+import { Author, Movie, User, List } from './connectors';
 import jwt from 'jsonwebtoken';
 import fetch from 'node-fetch';
 import { Op } from 'sequelize';
@@ -61,6 +61,14 @@ export const resolvers = {
     movies(user) {
       return user.getMovies();
     },
+    lists(user) {
+      return user.getLists();
+    },
+  },
+  List: {
+    movies(list) {
+      return list.getMovies();
+    },
   },
   Query: {
     books: () => books,
@@ -117,6 +125,14 @@ export const resolvers = {
       const user = await User.findByPk(context.user.id);
 
       return user.getMovies();
+    }),
+    lists: authenticated(async (root, args, context) => {
+      const user = await User.findByPk(context.user.id);
+
+      return user.getLists();
+    }),
+    list: authenticated(async (root, { listId }, context) => {
+      return List.findByPk(listId);
     }),
     serverTime: () => new Date(),
   },
@@ -210,6 +226,59 @@ export const resolvers = {
       return {
         favorites,
       };
+    }),
+    addToList: authenticated(async (root, { listId, movieId }) => {
+      const list = await List.findByPk(listId);
+      const movie = await Movie.findByPk(movieId);
+
+      if (!movie) {
+        throw new Error('Unable to find movie.');
+      }
+
+      if (!list) {
+        throw new Error('Unable to find list.');
+      }
+
+      await list.addMovie(movie);
+
+      return {
+        list,
+      };
+    }),
+    removeFromList: authenticated(async (root, { listId, movieId }) => {
+      const list = await List.findByPk(listId);
+      const movie = await Movie.findByPk(movieId);
+
+      if (!movie) {
+        throw new Error('Unable to find movie.');
+      }
+
+      if (!list) {
+        throw new Error('Unable to find list.');
+      }
+
+      await list.removeMovie(movie);
+
+      return {
+        list,
+      };
+    }),
+    addList: authenticated(async (root, args, context) => {
+      const list = await List.create({
+        title: args.title,
+      });
+
+      const user = await User.findByPk(context.user.id);
+
+      await user.addList(list);
+
+      return { list };
+    }),
+    removeList: authenticated(async (root, args) => {
+      const list = await List.findByPk(args.listId);
+
+      await list.destroy();
+      return { list };
     }),
   },
 };

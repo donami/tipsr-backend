@@ -16,6 +16,12 @@ export const typeDefs = gql`
     lastName: String
   }
 
+  type List {
+    id: Int!
+    title: String!
+    movies: [Movie]
+  }
+
   type User {
     id: Int
     firstName: String
@@ -24,6 +30,7 @@ export const typeDefs = gql`
     password: String
     jwt: String
     movies: [Movie]
+    lists: [List]
   }
 
   type Movie {
@@ -52,6 +59,26 @@ export const typeDefs = gql`
     error: Error
   }
 
+  type AddListPayload {
+    list: List
+    error: Error
+  }
+
+  type RemoveListPayload {
+    list: List
+    error: Error
+  }
+
+  type AddToListPayload {
+    list: List
+    error: Error
+  }
+
+  type RemoveFromListPayload {
+    list: List
+    error: Error
+  }
+
   # The "Query" type is the root of all GraphQL queries.
   # (A "Mutation" type will be covered later on.)
   type Query {
@@ -66,6 +93,8 @@ export const typeDefs = gql`
     me: User
     serverTime: String
     favorites: [Movie]
+    lists: [List]
+    list(listId: Int!): List
   }
 
   type Mutation {
@@ -74,5 +103,9 @@ export const typeDefs = gql`
     findMovies(title: String): [Movie]
     addMovie(title: String!, poster: String, externalId: Int): AddMoviePayload
     addFavorite(movieId: Int!): AddFavoritePayload
+    addList(title: String!): AddListPayload
+    removeList(listId: Int!): RemoveListPayload
+    addToList(listId: Int!, movieId: Int!): AddToListPayload
+    removeFromList(listId: Int!, movieId: Int!): RemoveFromListPayload
   }
 `;
