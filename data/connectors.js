@@ -32,7 +32,8 @@ const UserModel = db.define('user', {
 const MovieModel = db.define('movie', {
   title: { type: Sequelize.STRING, unique: true },
   poster: { type: Sequelize.STRING },
-  externalId: { type: Sequelize.STRING },
+  externalId: { type: Sequelize.INTEGER },
+  voteAverage: { type: Sequelize.FLOAT },
 });
 
 const ListModel = db.define('list', {
@@ -80,6 +81,7 @@ db.sync({ force: true }).then(async () => {
     title: 'The Lord of the Rings: The Return of the King',
     poster: 'http://image.tmdb.org/t/p/w342/rCzpDGLbOoPwLjy3OAm5NUPOTrC.jpg',
     externalId: 122,
+    voteAverage: 8.0,
   });
 
   await firstUser.setMovies([testMovie]);

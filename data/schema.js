@@ -38,6 +38,7 @@ export const typeDefs = gql`
     title: String!
     poster: String
     externalId: Int
+    voteAverage: Float
   }
 
   type Error {
@@ -99,9 +100,15 @@ export const typeDefs = gql`
 
   type Mutation {
     addAuthor(firstName: String!, lastName: String!): Author
+    addExternalMovie(externalId: Int!): AddMoviePayload
     login(email: String!, password: String!): LoginPayload
     findMovies(title: String): [Movie]
-    addMovie(title: String!, poster: String, externalId: Int): AddMoviePayload
+    addMovie(
+      title: String!
+      poster: String
+      externalId: Int
+      voteAverage: Float
+    ): AddMoviePayload
     addFavorite(movieId: Int!): AddFavoritePayload
     addList(title: String!): AddListPayload
     removeList(listId: Int!): RemoveListPayload

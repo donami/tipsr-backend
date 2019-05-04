@@ -26,6 +26,10 @@ const debugModel = model => {
   }
 };
 
+const createDefaultPosterPath = (poster, size = API_POSTER_SIZES.large) => {
+  return `${API_BASE_URL}${size}${poster}`;
+};
+
 // This is a (sample) collection of books we'll be able to query
 // the GraphQL server for.  A more complete example might fetch
 // from an existing data source like a REST API or database.
@@ -47,7 +51,6 @@ const users = [
 
 const authenticated = next => (root, args, context, info) => {
   if (!context.user) {
-    // console.log('WHAT');
     throw new Error(`Unauthenticated!`);
   }
 
@@ -110,15 +113,29 @@ export const resolvers = {
         return [];
       }
 
-      return json.results.map(movie => {
-        return {
-          id: movie.id,
-          title: movie.title,
-          poster: `${API_BASE_URL}${API_POSTER_SIZES.large}${
-            movie.poster_path
-          }`,
-        };
-      });
+      return Promise.all(
+        json.results.map(movie => {
+          return Movie.findOne({ where: { externalId: movie.id } }).then(
+            found => {
+              return {
+                id: found ? found.id : movie.id,
+                title: movie.title,
+                externalId: movie.id,
+                poster: createDefaultPosterPath(movie.poster_path),
+              };
+            }
+          );
+        })
+      );
+
+      // return json.results.map(movie => {
+      //   return {
+      //     id: movie.id,
+      //     title: movie.title,
+      //     externalId: movie.id,
+      //     poster: createDefaultPosterPath(movie.poster_path),
+      //   };
+      // });
     },
     me: authenticated((root, args, context) => context.user),
     favorites: authenticated(async (root, args, context) => {
@@ -177,9 +194,8 @@ export const resolvers = {
           return {
             id: movie.id,
             title: movie.title,
-            poster: `${API_BASE_URL}${API_POSTER_SIZES.large}${
-              movie.poster_path
-            }`,
+            poster: createDefaultPosterPath(movie.poster_path),
+            voteAverage: movie.vote_average,
           };
         });
       } catch (error) {
@@ -188,11 +204,42 @@ export const resolvers = {
 
       return [];
     },
+    addExternalMovie: async (root, { externalId }) => {
+      try {
+        const url = `https://api.themoviedb.org/3/movie/${externalId}?api_key=${API_KEY}&language=en-US`;
+        const results = await fetch(url);
+
+        const json = await results.json();
+
+        if (json && json.id) {
+          const movie = await Movie.create({
+            title: json.title,
+            poster: createDefaultPosterPath(json.poster_path),
+            voteAverage: json.vote_average,
+            externalId: json.id,
+          });
+
+          return { movie };
+        }
+        return {
+          error: {
+            message: 'Movie not found.',
+          },
+        };
+      } catch (error) {
+        return {
+          error: {
+            message: error.message,
+          },
+        };
+      }
+    },
     addMovie: async (root, args) => {
       try {
         const movie = await Movie.create({
           title: args.title,
           poster: args.poster,
+          voteAverage: args.voteAverage,
           externalId: args.externalId,
         });
         return { movie };
