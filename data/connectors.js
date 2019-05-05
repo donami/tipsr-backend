@@ -32,6 +32,7 @@ const UserModel = db.define('user', {
 const MovieModel = db.define('movie', {
   title: { type: Sequelize.STRING, unique: true },
   poster: { type: Sequelize.STRING },
+  description: { type: Sequelize.TEXT },
   externalId: { type: Sequelize.INTEGER },
   voteAverage: { type: Sequelize.FLOAT },
 });
@@ -80,6 +81,8 @@ db.sync({ force: true }).then(async () => {
   const testMovie = await MovieModel.create({
     title: 'The Lord of the Rings: The Return of the King',
     poster: 'http://image.tmdb.org/t/p/w342/rCzpDGLbOoPwLjy3OAm5NUPOTrC.jpg',
+    description:
+      'A darkness swirls at the center of a world-renowned dance company, one that will engulf the artistic director, an ambitious young dancer, and a grieving psychotherapist. Some will succumb to the nightmare. Others will finally wake up.',
     externalId: 122,
     voteAverage: 8.0,
   });

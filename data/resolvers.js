@@ -121,6 +121,7 @@ export const resolvers = {
                 id: found ? found.id : movie.id,
                 title: movie.title,
                 externalId: movie.id,
+                description: movie.overview,
                 poster: createDefaultPosterPath(movie.poster_path),
               };
             }
@@ -139,6 +140,7 @@ export const resolvers = {
     },
     me: authenticated((root, args, context) => context.user),
     favorites: authenticated(async (root, args, context) => {
+      console.log('context', context.response);
       const user = await User.findByPk(context.user.id);
 
       return user.getMovies();
@@ -196,6 +198,7 @@ export const resolvers = {
             title: movie.title,
             poster: createDefaultPosterPath(movie.poster_path),
             voteAverage: movie.vote_average,
+            description: movie.overview,
           };
         });
       } catch (error) {
@@ -217,6 +220,7 @@ export const resolvers = {
             poster: createDefaultPosterPath(json.poster_path),
             voteAverage: json.vote_average,
             externalId: json.id,
+            description: json.overview,
           });
 
           return { movie };
@@ -241,6 +245,7 @@ export const resolvers = {
           poster: args.poster,
           voteAverage: args.voteAverage,
           externalId: args.externalId,
+          description: args.description,
         });
         return { movie };
       } catch (error) {

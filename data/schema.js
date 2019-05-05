@@ -36,6 +36,7 @@ export const typeDefs = gql`
   type Movie {
     id: Int!
     title: String!
+    description: String
     poster: String
     externalId: Int
     voteAverage: Float
@@ -108,6 +109,7 @@ export const typeDefs = gql`
       poster: String
       externalId: Int
       voteAverage: Float
+      description: String
     ): AddMoviePayload
     addFavorite(movieId: Int!): AddFavoritePayload
     addList(title: String!): AddListPayload
