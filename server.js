@@ -1,59 +1,92 @@
-import { ApolloServer } from 'apollo-server';
+import Koa from 'koa';
+import { ApolloServer } from 'apollo-server-koa';
+// import cors from 'cors';
 import jwt from 'jsonwebtoken';
 
 import { resolvers } from './data/resolvers';
 import { typeDefs } from './data/schema';
-import { JWT_SECRET } from './config/secrets';
 
-const users = {
-  1: {
-    id: 1,
-    email: 'james@bond.com',
-    password: '123',
-    firstName: 'James',
-    lastName: 'Bond',
-  },
-};
-
-const getUser = token => {
-  try {
-    if (token) {
-      const tokenData = jwt.verify(token, JWT_SECRET);
-
-      if (tokenData && tokenData.id) {
-        const user = users[tokenData.id];
-
-        if (user) {
-          return user;
-        }
-      }
-    }
-    return null;
-  } catch (err) {
-    return null;
-  }
-};
+const JWT_SECRET_KEY = 'secret';
 
 // In the most basic sense, the ApolloServer can be started
 // by passing type definitions (typeDefs) and the resolvers
 // responsible for fetching the data for those types.
+
+const getUser = async token => {
+  if (!token) {
+    return null;
+  }
+
+  let decoded = null;
+  try {
+    decoded = await jwt.verify(token, JWT_SECRET_KEY);
+  } catch (err) {
+    decoded = null;
+  }
+
+  return decoded;
+};
+
 const server = new ApolloServer({
   typeDefs,
   resolvers,
-  context: ({ req }) => {
-    // get the user token from the headers
-    const token = req.headers.authorization || '';
-
+  context: async ({ ctx }) => {
+    const authorization = ctx.req.headers.authorization || '';
+    let token = null;
+    if (authorization) {
+      token = authorization.split('Bearer ');
+      token = token[1];
+    }
     // try to retrieve a user with the token
-    const user = getUser(token);
+    const user = await getUser(token);
 
-    // add the user to the context
-    return { user, token };
+    return {
+      ctx,
+      user,
+    };
   },
+  // context: ({ ctx }) => {
+  //   console.log(ctx.req.headers);
+  //   // get the user token from the headers
+  //   const authorization = ctx.req.headers.authorization || '';
+
+  //   let token = null;
+  //   if (authorization) {
+  //     token = authorization.split('Bearer ');
+  //   }
+
+  //   // console.log('auth!', req.headers.authorization);
+
+  //   // try to retrieve a user with the token
+  //   const user = getUser(token);
+
+  //   // add the user to the context
+  //   // return { user, token };
+  //   // return { user: null, token: null };
+  //   return ctx;
+  // },
+  // context: ({ req }) => {
+  //   // get the user token from the headers
+  //   // const token = req.headers.authorization || '';
+
+  //   console.log('auth!', req.headers.authorization);
+
+  //   // try to retrieve a user with the token
+  //   // const user = getUser(token);
+
+  //   // add the user to the context
+  //   // return { user, token };
+  //   return { user: null, token: null };
+  // },
 });
+
+const app = new Koa();
+
+const corsOptions = { credentials: true, origin: 'http://localhost:3000' };
+server.applyMiddleware({ app, cors: corsOptions });
 
 // This `listen` method launches a web-server.  Existing apps
 // can utilize middleware options, which we'll discuss later.
-server.listen().then(({ url }) => {
-  console.log(`🚀  Server ready at ${url}`);
+app.listen({ port: 4000 }, () => {
+  console.log(`🚀 Server ready at http://localhost:4000${server.graphqlPath}`);
 });

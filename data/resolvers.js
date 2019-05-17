@@ -1,7 +1,7 @@
-import { Author, Movie, User, List } from './connectors';
+import { Author, Movie, User, List, Genre } from './connectors';
 import jwt from 'jsonwebtoken';
 import fetch from 'node-fetch';
-import { Op } from 'sequelize';
+import { Op, literal } from 'sequelize';
 
 import { JWT_SECRET, API_KEY } from '../config/secrets';
 
@@ -44,11 +44,6 @@ const books = [
   },
 ];
 
-const users = [
-  { id: 1, email: 'admin@email.com', password: '123' },
-  { id: 2, email: 'user@email.com', password: '123' },
-];
-
 const authenticated = next => (root, args, context, info) => {
   if (!context.user) {
     throw new Error(`Unauthenticated!`);
@@ -66,6 +61,11 @@ export const resolvers = {
     },
     lists(user) {
       return user.getLists();
+    },
+  },
+  Movie: {
+    genres(movie) {
+      return movie.getGenres();
     },
   },
   List: {
@@ -87,8 +87,28 @@ export const resolvers = {
     movie(root, { id }) {
       return Movie.findByPk(id);
     },
+    genres() {
+      return Genre.findAll();
+    },
+    genre(root, { id }) {
+      return Genre.findByPk(id);
+    },
     users() {
       return User.findAll();
+    },
+    async reviews(root, { movieId }) {
+      const url = `https://api.themoviedb.org/3/movie/${movieId}/reviews?api_key=${API_KEY}&language=en-US&page=1`;
+      const results = await fetch(url);
+
+      const json = await results.json();
+
+      if (json.results <= 0) {
+        return [];
+      }
+
+      return {
+        reviews: json.results,
+      };
     },
     async search(root, { term }) {
       if (!term || !term.length) {
@@ -115,17 +135,17 @@ export const resolvers = {
 
       return Promise.all(
         json.results.map(movie => {
-          return Movie.findOne({ where: { externalId: movie.id } }).then(
-            found => {
-              return {
-                id: found ? found.id : movie.id,
-                title: movie.title,
-                externalId: movie.id,
-                description: movie.overview,
-                poster: createDefaultPosterPath(movie.poster_path),
-              };
-            }
-          );
+          return Movie.findOne({
+            where: { externalId: movie.id },
+          }).then(found => {
+            return {
+              id: found ? found.id : movie.id,
+              title: movie.title,
+              externalId: movie.id,
+              description: movie.overview,
+              poster: createDefaultPosterPath(movie.poster_path),
+            };
+          });
         })
       );
 
@@ -140,7 +160,6 @@ export const resolvers = {
     },
     me: authenticated((root, args, context) => context.user),
     favorites: authenticated(async (root, args, context) => {
-      console.log('context', context.response);
       const user = await User.findByPk(context.user.id);
 
       return user.getMovies();
@@ -153,6 +172,63 @@ export const resolvers = {
     list: authenticated(async (root, { listId }, context) => {
       return List.findByPk(listId);
     }),
+    suggest: async (root, { filters }) => {
+      const genreWhere = {};
+
+      if (filters.genre && !!filters.genre.length) {
+        genreWhere.id = {
+          [Op.in]: filters.genre,
+        };
+      }
+      const query = {
+        order: literal('random()'),
+        where: {},
+        include: [
+          {
+            model: Genre,
+            as: 'genres',
+            where: genreWhere,
+          },
+        ],
+      };
+
+      if (filters) {
+        if (filters.minRating) {
+          query.where = Object.assign({}, query.where, {
+            voteAverage: {
+              [Op.gte]: filters.minRating,
+            },
+          });
+        }
+        if (filters.startYear && !!filters.startYear.length) {
+          const startYear = new Date();
+          startYear.setYear(+filters.startYear);
+          startYear.setMonth(0);
+          startYear.setDate(1);
+          query.where = Object.assign({}, query.where, {
+            releaseDate: {
+              [Op.gte]: startYear,
+            },
+          });
+        }
+        if (filters.endYear && !!filters.endYear.length) {
+          const endYear = new Date();
+          endYear.setYear(+filters.endYear);
+          endYear.setMonth(0);
+          endYear.setDate(1);
+          query.where = Object.assign({}, query.where, {
+            releaseDate: {
+              [Op.lte]: endYear,
+            },
+          });
+        }
+      }
+
+      const movie = await Movie.findOne(query);
+
+      return { movie };
+    },
+
     serverTime: () => new Date(),
   },
   Mutation: {
@@ -165,9 +241,12 @@ export const resolvers = {
       return author;
     },
     login: async (root, { email, password }) => {
-      const user = users.find(
-        user => user.email === email && user.password === password
-      );
+      const user = await User.findOne({
+        where: {
+          email: email,
+          password: password,
+        },
+      });
 
       if (!user) {
         return {
@@ -177,7 +256,15 @@ export const resolvers = {
         };
       }
 
-      user.jwt = jwt.sign({ id: user.id }, JWT_SECRET);
+      user.token = jwt.sign(
+        {
+          id: user.id,
+          email: user.email,
+          firstName: user.firstName,
+          lastName: user.lastName,
+        },
+        JWT_SECRET
+      );
 
       return { user };
     },
@@ -207,6 +294,26 @@ export const resolvers = {
 
       return [];
     },
+    addGenre: async (root, { name }) => {
+      const genre = await Genre.create({
+        name,
+      });
+
+      return genre;
+    },
+    updateGenre: async (root, { id, name }) => {
+      const genre = await Genre.findByPk(id);
+
+      genre.name = name || genre.name;
+
+      return genre.save();
+    },
+    removeGenre: async (root, { id }) => {
+      const genre = await Genre.findByPk(id);
+
+      await genre.destroy();
+      return genre;
+    },
     addExternalMovie: async (root, { externalId }) => {
       try {
         const url = `https://api.themoviedb.org/3/movie/${externalId}?api_key=${API_KEY}&language=en-US`;
@@ -217,11 +324,36 @@ export const resolvers = {
         if (json && json.id) {
           const movie = await Movie.create({
             title: json.title,
+            genres: json.genres,
+            releaseDate: json.release_date,
             poster: createDefaultPosterPath(json.poster_path),
+            backdropPath: json.backdrop_path
+              ? createDefaultPosterPath(
+                  json.backdrop_path,
+                  API_POSTER_SIZES.huge
+                )
+              : null,
             voteAverage: json.vote_average,
             externalId: json.id,
             description: json.overview,
           });
+
+          if (json.genres && !!json.genres.length) {
+            const genres = await Promise.all(
+              json.genres.map(genre => {
+                return Genre.findOrCreate({
+                  where: {
+                    id: genre.id,
+                    name: genre.name,
+                  },
+                }).then(([genre, created]) => {
+                  return genre;
+                });
+              })
+            );
+
+            await movie.setGenres(genres);
+          }
 
           return { movie };
         }
@@ -257,7 +389,9 @@ export const resolvers = {
             duplicateError.path === 'title'
           ) {
             return {
-              error: { message: 'A movie with this title already exists.' },
+              error: {
+                message: 'A movie with this title already exists.',
+              },
             };
           }
         }

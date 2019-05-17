@@ -28,9 +28,15 @@ export const typeDefs = gql`
     lastName: String
     email: String
     password: String
-    jwt: String
+    token: String
     movies: [Movie]
     lists: [List]
+  }
+
+  type Credential {
+    token: String!
+    email: String!
+    name: String!
   }
 
   type Movie {
@@ -38,8 +44,23 @@ export const typeDefs = gql`
     title: String!
     description: String
     poster: String
+    backdropPath: String
     externalId: Int
+    releaseDate: String
     voteAverage: Float
+    genres: [Genre]
+  }
+
+  type Genre {
+    id: Int!
+    name: String!
+  }
+
+  type Review {
+    id: String! # external api uses string
+    author: String!
+    content: String!
+    url: String
   }
 
   type Error {
@@ -81,6 +102,23 @@ export const typeDefs = gql`
     error: Error
   }
 
+  type ReviewsResponse {
+    reviews: [Review]
+    error: Error
+  }
+
+  type SuggestPayload {
+    movie: Movie
+    error: Error
+  }
+
+  input SuggestFiltersInput {
+    startYear: String
+    endYear: String
+    genre: [Int] # Array of genre ids
+    minRating: Int
+  }
+
   # The "Query" type is the root of all GraphQL queries.
   # (A "Mutation" type will be covered later on.)
   type Query {
@@ -88,6 +126,9 @@ export const typeDefs = gql`
     authors: [Author]
     movies: [Movie]
     movie(id: Int!): Movie
+    reviews(movieId: Int!): ReviewsResponse
+    genre(id: Int!): Genre
+    genres: [Genre]
     search(term: String): [Movie]
     similar(externalId: Int!): [Movie]
     author(id: Int): Author
@@ -97,10 +138,14 @@ export const typeDefs = gql`
     favorites: [Movie]
     lists: [List]
     list(listId: Int!): List
+    suggest(filters: SuggestFiltersInput): SuggestPayload
   }
 
   type Mutation {
     addAuthor(firstName: String!, lastName: String!): Author
+    addGenre(name: String!): Genre
+    updateGenre(id: Int!, name: String!): Genre
+    removeGenre(id: Int!): Genre
     addExternalMovie(externalId: Int!): AddMoviePayload
     login(email: String!, password: String!): LoginPayload
     findMovies(title: String): [Movie]

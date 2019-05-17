@@ -32,17 +32,24 @@ const UserModel = db.define('user', {
 const MovieModel = db.define('movie', {
   title: { type: Sequelize.STRING, unique: true },
   poster: { type: Sequelize.STRING },
+  backdropPath: { type: Sequelize.STRING },
   description: { type: Sequelize.TEXT },
   externalId: { type: Sequelize.INTEGER },
   voteAverage: { type: Sequelize.FLOAT },
+  releaseDate: { type: Sequelize.DATEONLY },
 });
 
 const ListModel = db.define('list', {
   title: { type: Sequelize.STRING },
 });
 
+const GenreModel = db.define('genre', {
+  name: { type: Sequelize.STRING },
+});
+
 const ListMoviesModel = db.define('listMovies', {});
 const UserMoviesModel = db.define('userMovies', {});
+const MovieGenresModel = db.define('movieGenres', {});
 
 AuthorModel.hasMany(PostModel, { as: 'posts' });
 PostModel.belongsTo(AuthorModel);
@@ -56,10 +63,14 @@ ListModel.belongsTo(UserModel);
 ListModel.belongsToMany(MovieModel, { through: ListMoviesModel });
 MovieModel.belongsToMany(ListModel, { through: ListMoviesModel });
 
+GenreModel.belongsToMany(MovieModel, { through: MovieGenresModel });
+MovieModel.belongsToMany(GenreModel, { through: MovieGenresModel });
+
 const Author = db.models.author;
 const Post = db.models.post;
 const Movie = db.models.movie;
 const User = db.models.user;
+const Genre = db.models.genre;
 const List = db.models.list;
 
 // modify the mock data creation to also create some views:
@@ -78,14 +89,22 @@ db.sync({ force: true }).then(async () => {
     lastName: 'Doe',
   });
 
+  const GenreAdventure = await GenreModel.create({
+    name: 'Adventure',
+  });
   const testMovie = await MovieModel.create({
     title: 'The Lord of the Rings: The Return of the King',
     poster: 'http://image.tmdb.org/t/p/w342/rCzpDGLbOoPwLjy3OAm5NUPOTrC.jpg',
+    backdropPath:
+      'http://image.tmdb.org/t/p/w1280/kiWvoV78Cc3fUwkOHKzyBgVdrDD.jpg',
     description:
       'A darkness swirls at the center of a world-renowned dance company, one that will engulf the artistic director, an ambitious young dancer, and a grieving psychotherapist. Some will succumb to the nightmare. Others will finally wake up.',
     externalId: 122,
     voteAverage: 8.0,
+    releaseDate: '2006-01-01',
   });
+
+  await testMovie.setGenres([GenreAdventure]);
 
   await firstUser.setMovies([testMovie]);
 
@@ -108,4 +127,4 @@ db.sync({ force: true }).then(async () => {
   return Promise.resolve();
 });
 
-export { Author, Post, Movie, User, List };
+export { Author, Post, Movie, User, List, Genre };
