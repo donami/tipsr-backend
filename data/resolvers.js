@@ -81,8 +81,14 @@ export const resolvers = {
     authors() {
       return Author.findAll();
     },
-    movies() {
-      return Movie.findAll();
+    movies(root, { featured }) {
+      const query = { where: {} };
+
+      if (typeof featured === 'boolean') {
+        query.where = { featured };
+      }
+
+      return Movie.findAll(query);
     },
     movie(root, { id }) {
       return Movie.findByPk(id);
@@ -92,6 +98,39 @@ export const resolvers = {
     },
     genre(root, { id }) {
       return Genre.findByPk(id);
+    },
+    async videos(root, { externalMovieId }) {
+      const url = `https://api.themoviedb.org/3/movie/${externalMovieId}/videos?api_key=${API_KEY}&language=en-US`;
+      const results = await fetch(url);
+
+      const json = await results.json();
+
+      if (json.results <= 0) {
+        return [];
+      }
+
+      return {
+        videos: json.results,
+      };
+    },
+    async nowPlaying(root, args) {
+      const url = `https://api.themoviedb.org/3/movie/now_playing?api_key=${API_KEY}&language=en-US&page=1`;
+      const results = await fetch(url);
+
+      const json = await results.json();
+
+      if (json.results <= 0) {
+        return [];
+      }
+
+      return {
+        movies: json.results.map(item => {
+          item.backdropPath = item.backdrop_path
+            ? createDefaultPosterPath(item.backdrop_path, API_POSTER_SIZES.huge)
+            : null;
+          return item;
+        }),
+      };
     },
     users() {
       return User.findAll();

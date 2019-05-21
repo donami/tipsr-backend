@@ -39,6 +39,15 @@ export const typeDefs = gql`
     name: String!
   }
 
+  type Video {
+    id: String!
+    key: String!
+    name: String!
+    site: String!
+    type: String!
+    size: Int
+  }
+
   type Movie {
     id: Int!
     title: String!
@@ -49,6 +58,7 @@ export const typeDefs = gql`
     releaseDate: String
     voteAverage: Float
     genres: [Genre]
+    featured: Boolean
   }
 
   type Genre {
@@ -69,6 +79,16 @@ export const typeDefs = gql`
 
   type LoginPayload {
     user: User
+    error: Error
+  }
+
+  type VideosPayload {
+    videos: [Video]
+    error: Error
+  }
+
+  type NowPlayingPayload {
+    movies: [Movie]
     error: Error
   }
 
@@ -124,7 +144,7 @@ export const typeDefs = gql`
   type Query {
     books: [Book]
     authors: [Author]
-    movies: [Movie]
+    movies(featured: Boolean): [Movie]
     movie(id: Int!): Movie
     reviews(movieId: Int!): ReviewsResponse
     genre(id: Int!): Genre
@@ -136,8 +156,10 @@ export const typeDefs = gql`
     me: User
     serverTime: String
     favorites: [Movie]
+    nowPlaying: NowPlayingPayload
     lists: [List]
     list(listId: Int!): List
+    videos(externalMovieId: Int!): VideosPayload
     suggest(filters: SuggestFiltersInput): SuggestPayload
   }
 

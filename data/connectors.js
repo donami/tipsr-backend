@@ -37,6 +37,7 @@ const MovieModel = db.define('movie', {
   externalId: { type: Sequelize.INTEGER },
   voteAverage: { type: Sequelize.FLOAT },
   releaseDate: { type: Sequelize.DATEONLY },
+  featured: { type: Sequelize.BOOLEAN, defaultValue: false },
 });
 
 const ListModel = db.define('list', {
@@ -100,6 +101,7 @@ db.sync({ force: true }).then(async () => {
     description:
       'A darkness swirls at the center of a world-renowned dance company, one that will engulf the artistic director, an ambitious young dancer, and a grieving psychotherapist. Some will succumb to the nightmare. Others will finally wake up.',
     externalId: 122,
+    featured: true,
     voteAverage: 8.0,
     releaseDate: '2006-01-01',
   });
