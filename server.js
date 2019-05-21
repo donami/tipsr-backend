@@ -84,7 +84,9 @@ const server = new ApolloServer({
 
 const app = new Koa();
 
-const corsOptions = { credentials: true, origin: 'http://localhost:3000' };
+const origin = process.env.CLIENT_URL || 'http://localhost:3000';
+
+const corsOptions = { credentials: true, origin: origin };
 server.applyMiddleware({ app, cors: corsOptions });
 
 // This `listen` method launches a web-server.  Existing apps
