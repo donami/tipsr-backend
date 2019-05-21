@@ -8,6 +8,8 @@ import { typeDefs } from './data/schema';
 
 const JWT_SECRET_KEY = 'secret';
 
+const port = process.env.PORT || 3030;
+
 // In the most basic sense, the ApolloServer can be started
 // by passing type definitions (typeDefs) and the resolvers
 // responsible for fetching the data for those types.
@@ -87,6 +89,6 @@ server.applyMiddleware({ app, cors: corsOptions });
 
 // This `listen` method launches a web-server.  Existing apps
 // can utilize middleware options, which we'll discuss later.
-app.listen({ port: 4000 }, () => {
+app.listen({ port }, () => {
   console.log(`🚀 Server ready at http://localhost:4000${server.graphqlPath}`);
 });
