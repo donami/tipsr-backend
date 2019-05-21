@@ -28,6 +28,7 @@ export const typeDefs = gql`
     lastName: String
     email: String
     password: String
+    role: String
     token: String
     movies: [Movie]
     lists: [List]
@@ -37,6 +38,7 @@ export const typeDefs = gql`
     token: String!
     email: String!
     name: String!
+    role: String
   }
 
   type Video {

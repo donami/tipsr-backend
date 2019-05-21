@@ -27,6 +27,7 @@ const UserModel = db.define('user', {
   password: { type: Sequelize.STRING },
   firstName: { type: Sequelize.STRING },
   lastName: { type: Sequelize.STRING },
+  role: { type: Sequelize.STRING, defaultValue: 'USER' },
 });
 
 const MovieModel = db.define('movie', {
@@ -82,12 +83,14 @@ db.sync({ force: true }).then(async () => {
     password: '123',
     firstName: 'James',
     lastName: 'Bond',
+    role: 'SYSADMIN',
   });
   await UserModel.create({
     email: 'user@email.com',
     password: '123',
     firstName: 'Jane',
     lastName: 'Doe',
+    role: 'USER',
   });
 
   const GenreAdventure = await GenreModel.create({

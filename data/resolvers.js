@@ -301,6 +301,7 @@ export const resolvers = {
           email: user.email,
           firstName: user.firstName,
           lastName: user.lastName,
+          role: user.role,
         },
         JWT_SECRET
       );
