@@ -326,6 +326,38 @@ export const resolvers = {
 
       return author;
     },
+    signup: async (root, args) => {
+      let error = null;
+      let user = null;
+
+      try {
+        user = await User.create({
+          email: args.email,
+          password: args.password,
+          firstName: args.firstName,
+          lastName: args.lastName,
+        });
+      } catch (e) {
+        if (e.errors && !!e.errors.length) {
+          if (
+            e.errors[0].type === 'unique violation' &&
+            e.errors[0].path === 'email'
+          ) {
+            error = {
+              message: 'A user with that email already exists.',
+            };
+          } else {
+            error = {
+              message: 'Oops.. something went wrong.',
+            };
+          }
+        }
+      }
+      return {
+        user,
+        error,
+      };
+    },
     login: async (root, { email, password }) => {
       const user = await User.findOne({
         where: {

@@ -84,6 +84,11 @@ export const typeDefs = gql`
     error: Error
   }
 
+  type SignupPayload {
+    user: User
+    error: Error
+  }
+
   type VideosPayload {
     videos: [Video]
     error: Error
@@ -178,6 +183,12 @@ export const typeDefs = gql`
     removeGenre(id: Int!): Genre
     addExternalMovie(externalId: Int!): AddMoviePayload
     login(email: String!, password: String!): LoginPayload
+    signup(
+      email: String!
+      password: String!
+      firstName: String!
+      lastName: String!
+    ): SignupPayload
     findMovies(title: String): [Movie]
     addMovie(
       title: String!

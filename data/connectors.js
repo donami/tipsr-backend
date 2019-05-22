@@ -23,7 +23,7 @@ const PostModel = db.define('post', {
 });
 
 const UserModel = db.define('user', {
-  email: { type: Sequelize.STRING },
+  email: { type: Sequelize.STRING, unique: true },
   password: { type: Sequelize.STRING },
   firstName: { type: Sequelize.STRING },
   lastName: { type: Sequelize.STRING },
