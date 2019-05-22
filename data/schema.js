@@ -134,6 +134,11 @@ export const typeDefs = gql`
     error: Error
   }
 
+  type UpcomingPayload {
+    movies: [Movie]
+    error: Error
+  }
+
   input SuggestFiltersInput {
     startYear: String
     endYear: String
@@ -158,6 +163,7 @@ export const typeDefs = gql`
     me: User
     serverTime: String
     favorites: [Movie]
+    upcoming: UpcomingPayload
     nowPlaying: NowPlayingPayload
     lists: [List]
     list(listId: Int!): List
@@ -182,6 +188,7 @@ export const typeDefs = gql`
     ): AddMoviePayload
     addFavorite(movieId: Int!): AddFavoritePayload
     addList(title: String!): AddListPayload
+    updateMovie(movieId: Int!, featured: Boolean): AddMoviePayload
     removeList(listId: Int!): RemoveListPayload
     addToList(listId: Int!, movieId: Int!): AddToListPayload
     removeFromList(listId: Int!, movieId: Int!): RemoveFromListPayload

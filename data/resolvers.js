@@ -99,6 +99,39 @@ export const resolvers = {
     genre(root, { id }) {
       return Genre.findByPk(id);
     },
+    async upcoming() {
+      const url = `https://api.themoviedb.org/3/movie/upcoming?api_key=${API_KEY}&language=en-US&page=1`;
+      const results = await fetch(url);
+
+      const json = await results.json();
+
+      if (json.results <= 0) {
+        return [];
+      }
+
+      const movies = await Promise.all(
+        json.results.map(movie => {
+          return Movie.findOne({
+            where: { externalId: movie.id },
+          }).then(found => {
+            return {
+              id: found ? found.id : movie.id,
+              title: movie.title,
+              externalId: movie.id,
+              description: movie.overview,
+              poster: createDefaultPosterPath(movie.poster_path),
+              backdropPath: movie.backdrop_path
+                ? createDefaultPosterPath(
+                    movie.backdrop_path,
+                    API_POSTER_SIZES.huge
+                  )
+                : null,
+            };
+          });
+        })
+      );
+      return { movies };
+    },
     async videos(root, { externalMovieId }) {
       const url = `https://api.themoviedb.org/3/movie/${externalMovieId}/videos?api_key=${API_KEY}&language=en-US`;
       const results = await fetch(url);
@@ -123,14 +156,28 @@ export const resolvers = {
         return [];
       }
 
-      return {
-        movies: json.results.map(item => {
-          item.backdropPath = item.backdrop_path
-            ? createDefaultPosterPath(item.backdrop_path, API_POSTER_SIZES.huge)
-            : null;
-          return item;
-        }),
-      };
+      const movies = await Promise.all(
+        json.results.map(movie => {
+          return Movie.findOne({
+            where: { externalId: movie.id },
+          }).then(found => {
+            return {
+              id: found ? found.id : movie.id,
+              title: movie.title,
+              externalId: movie.id,
+              description: movie.overview,
+              poster: createDefaultPosterPath(movie.poster_path),
+              backdropPath: movie.backdrop_path
+                ? createDefaultPosterPath(
+                    movie.backdrop_path,
+                    API_POSTER_SIZES.huge
+                  )
+                : null,
+            };
+          });
+        })
+      );
+      return { movies };
     },
     users() {
       return User.findAll();
@@ -353,6 +400,20 @@ export const resolvers = {
 
       await genre.destroy();
       return genre;
+    },
+    updateMovie: async (root, args) => {
+      const movie = await Movie.findByPk(args.movieId);
+
+      if (movie) {
+        movie.featured =
+          typeof args.featured === 'boolean' ? args.featured : movie.featured;
+      }
+
+      const res = await movie.save();
+
+      return {
+        movie: res,
+      };
     },
     addExternalMovie: async (root, { externalId }) => {
       try {
