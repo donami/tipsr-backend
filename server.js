@@ -84,9 +84,25 @@ const server = new ApolloServer({
 
 const app = new Koa();
 
-const origin = process.env.CLIENT_URL || 'http://localhost:3000';
+// const origin = process.env.CLIENT_URL || 'http://localhost:3000';
 
-const corsOptions = { credentials: true, origin: origin };
+const whitelist = ['http://spot-movie.com', 'http://www.spot-movie.com'];
+
+function checkOriginAgainstWhitelist(ctx) {
+  const requestOrigin = ctx.accept.headers.origin;
+  if (!whitelist.includes(requestOrigin)) {
+    return ctx.throw(`🙈 ${requestOrigin} is not a valid origin`);
+  }
+  return requestOrigin;
+}
+
+const corsOptions = {
+  credentials: true,
+  origin: process.env.CLIENT_URL
+    ? checkOriginAgainstWhitelist
+    : 'http://localhost:3000',
+};
+// const corsOptions = { credentials: true, origin: origin };
 server.applyMiddleware({ app, cors: corsOptions });
 
 // This `listen` method launches a web-server.  Existing apps
