@@ -1,4 +1,4 @@
-import { Author, Movie, User, List, Genre } from './connectors';
+import { Author, Movie, User, List, Genre, UserMovies } from './connectors';
 import jwt from 'jsonwebtoken';
 import fetch from 'node-fetch';
 import { Op, literal } from 'sequelize';
@@ -532,14 +532,30 @@ export const resolvers = {
       }
     },
     addFavorite: authenticated(async (root, args, { user }) => {
-      const userData = await User.findByPk(user.id);
+      const userData = await User.findByPk(user.id, {
+        include: [
+          {
+            model: Movie,
+            as: 'movies',
+          },
+        ],
+      });
       const movie = await Movie.findByPk(args.movieId);
 
       if (!movie) {
         throw new Error('Unable to find movie.');
       }
 
-      await userData.addMovie(movie);
+      const alreadyExists = !!userData.movies.find(
+        item => item.id === movie.id
+      );
+
+      if (alreadyExists) {
+        await userData.removeMovie(movie);
+      } else {
+        await userData.addMovie(movie);
+      }
+
       const favorites = await userData.getMovies();
 
       return {
