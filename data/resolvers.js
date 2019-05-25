@@ -245,11 +245,14 @@ export const resolvers = {
       // });
     },
     me: authenticated((root, args, context) => context.user),
-    favorites: authenticated(async (root, args, context) => {
+    favorites: async (root, args, context) => {
+      if (!context.user) {
+        return [];
+      }
       const user = await User.findByPk(context.user.id);
 
       return user.getMovies();
-    }),
+    },
     lists: authenticated(async (root, args, context) => {
       const user = await User.findByPk(context.user.id);
 
