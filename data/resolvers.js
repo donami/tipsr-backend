@@ -2,6 +2,7 @@ import { Author, Movie, User, List, Genre, UserMovies } from './connectors';
 import jwt from 'jsonwebtoken';
 import fetch from 'node-fetch';
 import { Op, literal } from 'sequelize';
+import Buffer from 'Buffer';
 
 import { JWT_SECRET, API_KEY } from '../config/secrets';
 
@@ -74,6 +75,60 @@ export const resolvers = {
     },
   },
   Query: {
+    allMoviesCursor: async (_, { after, first }) => {
+      let movies = [];
+
+      if (after !== undefined) {
+        // const buff = new Buffer(after, 'base64');
+        // const id = buff.toString('ascii');
+        movies = await Movie.findAll({
+          limit: first,
+          where: {
+            id: {
+              [Op.gt]: +after,
+            },
+          },
+        });
+      } else {
+        movies = await Movie.findAll({
+          limit: first,
+        });
+      }
+
+      let endCursor;
+      const edges = movies.map(movie => {
+        // const buffer = new Buffer(todo.id);
+        // endCursor = buffer.toString('base64');
+        endCursor = movie.id;
+        return {
+          cursor: endCursor,
+          node: movie,
+        };
+      });
+
+      let hasNextPage = false;
+
+      if (typeof after !== 'undefined' && !!movies.length) {
+        hasNextPage = await Movie.findOne({
+          where: {
+            id: {
+              [Op.gt]: +endCursor,
+            },
+          },
+        }).then(movie => {
+          return !!movie;
+        });
+      }
+
+      return {
+        edges,
+        pageInfo: {
+          hasNextPage: hasNextPage,
+          endCursor,
+        },
+        //  totalCount,
+      };
+    },
     books: () => books,
     author(_, args) {
       return Author.find({ where: args });
