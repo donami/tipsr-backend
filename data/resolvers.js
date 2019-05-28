@@ -31,20 +31,6 @@ const createDefaultPosterPath = (poster, size = API_POSTER_SIZES.large) => {
   return `${API_BASE_URL}${size}${poster}`;
 };
 
-// This is a (sample) collection of books we'll be able to query
-// the GraphQL server for.  A more complete example might fetch
-// from an existing data source like a REST API or database.
-const books = [
-  {
-    title: 'Harry Potter and the Chamber of Secrets',
-    author: 'J.K. Rowling',
-  },
-  {
-    title: 'Jurassic Park',
-    author: 'Michael Crichton',
-  },
-];
-
 const authenticated = next => (root, args, context, info) => {
   if (!context.user) {
     throw new Error(`Unauthenticated!`);
@@ -53,8 +39,6 @@ const authenticated = next => (root, args, context, info) => {
   return next(root, args, context, info);
 };
 
-// Resolvers define the technique for fetching the types in the
-// schema.  We'll retrieve books from the "books" array above.
 export const resolvers = {
   User: {
     movies(user) {
@@ -79,13 +63,12 @@ export const resolvers = {
       let movies = [];
 
       if (after !== undefined) {
-        // const buff = new Buffer(after, 'base64');
-        // const id = buff.toString('ascii');
+        const id = Buffer.from(after, 'base64').toString();
         movies = await Movie.findAll({
           limit: first,
           where: {
             id: {
-              [Op.gt]: +after,
+              [Op.gt]: +id,
             },
           },
         });
@@ -97,9 +80,7 @@ export const resolvers = {
 
       let endCursor;
       const edges = movies.map(movie => {
-        // const buffer = new Buffer(todo.id);
-        // endCursor = buffer.toString('base64');
-        endCursor = movie.id;
+        endCursor = Buffer.from(movie.id.toString()).toString('base64');
         return {
           cursor: endCursor,
           node: movie,
@@ -108,11 +89,13 @@ export const resolvers = {
 
       let hasNextPage = false;
 
-      if (typeof after !== 'undefined' && !!movies.length) {
+      if (!!movies.length) {
+        const id = Buffer.from(endCursor, 'base64').toString();
+        console.log('id', id);
         hasNextPage = await Movie.findOne({
           where: {
             id: {
-              [Op.gt]: +endCursor,
+              [Op.gt]: +id,
             },
           },
         }).then(movie => {
@@ -129,7 +112,6 @@ export const resolvers = {
         //  totalCount,
       };
     },
-    books: () => books,
     author(_, args) {
       return Author.find({ where: args });
     },
