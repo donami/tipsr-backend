@@ -5,7 +5,6 @@ import { gql } from 'apollo-server';
 export const typeDefs = gql`
   # Comments in GraphQL are defined with the hash (#) symbol.
 
-  # This "Book" type can be used in other type declarations.
   type MoviesResult {
     movies: [Movie]
     totalCount: Int
@@ -23,11 +22,6 @@ export const typeDefs = gql`
     pageInfo: PageInfo!
     totalCount: Int!
   }
-  type Book {
-    title: String
-    author: String
-  }
-
   type Author {
     firstName: String
     lastName: String
@@ -172,7 +166,6 @@ export const typeDefs = gql`
   # (A "Mutation" type will be covered later on.)
   type Query {
     allMoviesCursor(after: String, first: Int): MoviesResultCursor
-    books: [Book]
     authors: [Author]
     movies(featured: Boolean): [Movie]
     movie(id: Int!): Movie
