@@ -50,7 +50,13 @@ export const resolvers = {
   },
   Movie: {
     genres(movie) {
-      return movie.getGenres();
+      if (typeof movie.getGenres === 'function') {
+        return movie.getGenres();
+      }
+      if (typeof movie.genres !== 'undefined' && movie.genres.length) {
+        return movie.genres;
+      }
+      return [];
     },
   },
   List: {
@@ -257,30 +263,41 @@ export const resolvers = {
         return [];
       }
 
+      const genresUrl = `https://api.themoviedb.org/3/genre/movie/list?api_key=${API_KEY}&language=en-US`;
+      const allGenres = await fetch(genresUrl)
+        .then(res => res.json())
+        .then(json => {
+          return json;
+        });
+
       return Promise.all(
         json.results.map(movie => {
           return Movie.findOne({
             where: { externalId: movie.id },
-          }).then(found => {
+          }).then(async found => {
+            let genres = [];
+
+            if (found) {
+              genres = found.genres;
+            } else {
+              genres = movie.genre_ids
+                .map(genreId => {
+                  return (allGenres.genres || []).find(g => g.id === genreId);
+                })
+                .filter(g => !!g);
+            }
+
             return {
               id: found ? found.id : movie.id,
               title: movie.title,
               externalId: movie.id,
+              genres: genres,
               description: movie.overview,
               poster: createDefaultPosterPath(movie.poster_path),
             };
           });
         })
       );
-
-      // return json.results.map(movie => {
-      //   return {
-      //     id: movie.id,
-      //     title: movie.title,
-      //     externalId: movie.id,
-      //     poster: createDefaultPosterPath(movie.poster_path),
-      //   };
-      // });
     },
     me: authenticated((root, args, context) => context.user),
     favorites: async (root, args, context) => {
