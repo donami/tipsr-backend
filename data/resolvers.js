@@ -233,7 +233,7 @@ export const resolvers = {
         reviews: json.results,
       };
     },
-    async search(root, { term }) {
+    async search(root, { term, limit }) {
       if (!term || !term.length) {
         return null;
       }
@@ -244,6 +244,7 @@ export const resolvers = {
             [Op.iLike]: `%${term}%`,
           },
         },
+        limit: limit || 999,
       });
     },
     async similar(root, { externalId }) {

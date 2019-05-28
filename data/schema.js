@@ -172,7 +172,7 @@ export const typeDefs = gql`
     reviews(movieId: Int!): ReviewsResponse
     genre(id: Int!): Genre
     genres: [Genre]
-    search(term: String): [Movie]
+    search(term: String, limit: Int): [Movie]
     similar(externalId: Int!): [Movie]
     author(id: Int): Author
     users: [User]
