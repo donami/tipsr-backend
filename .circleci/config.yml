@@ -47,7 +47,7 @@ jobs:
             # pyinstaller -F hello_world.py
             # docker build -t donami/$IMAGE_NAME:$TAG .
             docker build -t donami/spot-movie-backend-test .
-            # echo $DOCKER_PWD | docker login -u $DOCKER_LOGIN --password-stdin
+            echo $DOCKER_PWD | docker login -u $DOCKER_LOGIN --password-stdin
             docker push donami/spot-movie-backend-test
             # docker push donami/$IMAGE_NAME:$TAG
 
