@@ -41,9 +41,48 @@ const MovieModel = db.define('movie', {
   featured: { type: Sequelize.BOOLEAN, defaultValue: false },
 });
 
+MovieModel.addHook('afterCreate', async (movie, options) => {
+  const category = await ForumCategory.create({
+    title: movie.title,
+  });
+
+  await movie.setForumCategory(category);
+});
+
 const ListModel = db.define('list', {
   title: { type: Sequelize.STRING },
 });
+
+const ForumCategoryModel = db.define('forumCategory', {
+  title: { type: Sequelize.STRING },
+  views: { type: Sequelize.INTEGER, defaultValue: 0 },
+  posts: { type: Sequelize.INTEGER, defaultValue: 0 },
+  // topics: { type: Sequelize.STRING },
+});
+
+const ForumTopicModel = db.define(
+  'forumTopic',
+  {
+    title: { type: Sequelize.STRING },
+    message: { type: Sequelize.TEXT },
+    views: { type: Sequelize.INTEGER, defaultValue: 0 },
+  },
+  { timestamps: true }
+);
+
+const ForumPostModel = db.define(
+  'forumPost',
+  {
+    message: { type: Sequelize.TEXT },
+    // createdAt: {
+    //   type: Sequelize.DATE,
+    //   defaultValue: Sequelize.literal('NOW()'),
+    // },
+  },
+  {
+    timestamps: true,
+  }
+);
 
 const GenreModel = db.define('genre', {
   name: { type: Sequelize.STRING },
@@ -55,6 +94,22 @@ const MovieGenresModel = db.define('movieGenres', {});
 
 AuthorModel.hasMany(PostModel, { as: 'posts' });
 PostModel.belongsTo(AuthorModel);
+
+ForumCategoryModel.hasMany(ForumTopicModel, { as: 'topics' });
+ForumTopicModel.belongsTo(ForumCategoryModel);
+
+ForumTopicModel.hasMany(ForumPostModel, { as: 'posts' });
+ForumPostModel.belongsTo(ForumTopicModel);
+
+MovieModel.hasOne(ForumCategoryModel);
+// MovieModel.hasOne(ForumCategoryModel, { as: 'forumCategory' });
+// ForumCategoryModel.belongsTo(MovieModel);
+
+UserModel.hasMany(ForumPostModel, { as: 'posts' });
+ForumPostModel.belongsTo(UserModel);
+
+UserModel.hasMany(ForumTopicModel, { as: 'topics' });
+ForumTopicModel.belongsTo(UserModel);
 
 UserModel.belongsToMany(MovieModel, { through: UserMoviesModel });
 MovieModel.belongsToMany(UserModel, { through: UserMoviesModel });
@@ -74,6 +129,9 @@ const Movie = db.models.movie;
 const User = db.models.user;
 const Genre = db.models.genre;
 const List = db.models.list;
+const ForumCategory = db.models.forumCategory;
+const ForumTopic = db.models.forumTopic;
+const ForumPost = db.models.forumPost;
 
 // modify the mock data creation to also create some views:
 // casual.seed(123);
@@ -86,13 +144,29 @@ if (!production) {
       lastName: 'Bond',
       role: 'SYSADMIN',
     });
-    await UserModel.create({
+    const secondUser = await UserModel.create({
       email: 'user@email.com',
       password: '123',
       firstName: 'Jane',
       lastName: 'Doe',
       role: 'USER',
     });
+
+    const _forumPost = await ForumPost.create({
+      message: 'This is a lorem ipsum post.',
+    });
+    const _forumTopic = await ForumTopic.create({
+      title: 'This is a lorem ipsum topic.',
+      message: 'Hello, I have a question!',
+    });
+    const forumCat = await ForumCategory.create({
+      title: 'First forum category',
+    });
+
+    await _forumTopic.setUser(secondUser);
+    await _forumPost.setUser(firstUser);
+    await _forumTopic.addPost(_forumPost);
+    await forumCat.addTopic(_forumTopic);
 
     const GenreAdventure = await GenreModel.create({
       name: 'Adventure',
@@ -134,4 +208,14 @@ if (!production) {
   });
 }
 
-export { Author, Post, Movie, User, List, Genre };
+export {
+  Author,
+  Post,
+  Movie,
+  User,
+  List,
+  Genre,
+  ForumCategory,
+  ForumPost,
+  ForumTopic,
+};

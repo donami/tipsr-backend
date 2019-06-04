@@ -1,10 +1,12 @@
 {
   "dependencies": {
+    "@babel/cli": "^7.4.4",
     "Buffer": "^0.0.0",
     "apollo-server": "^2.4.8",
     "apollo-server-express": "^2.4.8",
     "apollo-server-koa": "^2.4.8",
     "babel-cli": "^6.26.0",
+    "babel-polyfill": "^6.26.0",
     "babel-preset-env": "^1.7.0",
     "body-parser": "^1.19.0",
     "cookie-parser": "^1.4.4",
@@ -23,7 +25,9 @@
   "main": "index.js",
   "license": "MIT",
   "scripts": {
-    "start": "nodemon ./server.js --exec babel-node"
+    "start": "nodemon ./src/server.js --exec babel-node",
+    "build": "babel src -d dist",
+    "prod": "node ./dist/server.js"
   },
   "babel": {
     "presets": [
