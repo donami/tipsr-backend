@@ -55,9 +55,9 @@ jobs:
           paths:
             - node_modules
           key: v1-dependencies-{{ checksum "package.json" }}
-      # - run:
-      #     name: Deploy app to Digital Ocean Server via Docker
-      #     command: |
-      #       ssh -o StrictHostKeyChecking=no root@hello.dpunks.org "/bin/bash ./deploy_app.sh ariv3ra/$IMAGE_NAME:$TAG"
+      - run:
+          name: Deploy app to Server via Docker
+          command: |
+            ssh -o StrictHostKeyChecking=no ubuntu@ec2-18-216-230-185.us-east-2.compute.amazonaws.com "/bin/bash ./deploy_app.sh donami/spot-movie-backend"
       # run tests!
       # - run: yarn test
