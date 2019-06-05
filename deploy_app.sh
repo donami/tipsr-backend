@@ -28,6 +28,6 @@ fi
 
 echo "Starting SpotMovie Backend using Docker Image name: $DOCKER_IMAGE"
 
-docker run -d --rm=true -p 80:5000  --name spot-movie-backend $DOCKER_IMAGE
+docker run -d --rm=true -p 3030:3030  --name spot-movie-backend $DOCKER_IMAGE
 
 docker ps -a
