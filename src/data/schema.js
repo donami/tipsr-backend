@@ -37,12 +37,15 @@ export const typeDefs = gql`
     id: Int
     firstName: String
     lastName: String
+    fullName: String
     email: String
     password: String
     role: String
     token: String
     movies: [Movie]
     lists: [List]
+    topics: [ForumTopic]
+    posts: [ForumPost]
   }
 
   type Credential {
@@ -72,11 +75,39 @@ export const typeDefs = gql`
     voteAverage: Float
     genres: [Genre]
     featured: Boolean
+    forumCategory: ForumCategory
   }
 
   type Genre {
     id: Int!
     name: String!
+  }
+
+  type ForumCategory {
+    id: Int!
+    title: String!
+    views: Int!
+    posts: Int!
+    topics: [ForumTopic]
+    movie: Movie
+  }
+
+  type ForumTopic {
+    id: Int!
+    title: String!
+    views: Int!
+    category: ForumCategory
+    message: String!
+    user: User
+    posts: [ForumPost]
+    createdAt: String
+  }
+
+  type ForumPost {
+    id: Int!
+    message: String!
+    user: User
+    createdAt: String
   }
 
   type Review {
@@ -177,6 +208,10 @@ export const typeDefs = gql`
     author(id: Int): Author
     users: [User]
     me: User
+    forumCategories: [ForumCategory]
+    forumCategory(id: Int!): ForumCategory
+    forumTopic(id: Int!): ForumTopic
+    forumTopics: [ForumTopic]
     serverTime: String
     favorites: [Movie]
     upcoming: UpcomingPayload
@@ -188,6 +223,13 @@ export const typeDefs = gql`
   }
 
   type Mutation {
+    addForumCategory(title: String!): ForumCategory
+    addForumTopic(
+      title: String!
+      message: String!
+      categoryId: Int!
+    ): ForumTopic
+    addForumPost(message: String!, topicId: Int!): ForumPost
     addAuthor(firstName: String!, lastName: String!): Author
     addGenre(name: String!): Genre
     updateGenre(id: Int!, name: String!): Genre

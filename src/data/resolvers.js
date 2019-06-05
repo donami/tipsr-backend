@@ -1,4 +1,14 @@
-import { Author, Movie, User, List, Genre, UserMovies } from './connectors';
+import {
+  Author,
+  Movie,
+  User,
+  List,
+  Genre,
+  UserMovies,
+  ForumCategory,
+  ForumTopic,
+  ForumPost,
+} from './connectors';
 import jwt from 'jsonwebtoken';
 import fetch from 'node-fetch';
 import { Op, literal } from 'sequelize';
@@ -41,11 +51,20 @@ const authenticated = next => (root, args, context, info) => {
 
 export const resolvers = {
   User: {
+    fullName(user) {
+      return `${user.firstName} ${user.lastName}`;
+    },
     movies(user) {
       return user.getMovies();
     },
     lists(user) {
       return user.getLists();
+    },
+    posts(user) {
+      return user.getPosts();
+    },
+    topics(user) {
+      return user.getTopics();
     },
   },
   Movie: {
@@ -58,13 +77,59 @@ export const resolvers = {
       }
       return [];
     },
+    forumCategory(movie) {
+      return movie.getForumCategory();
+    },
   },
   List: {
     movies(list) {
       return list.getMovies();
     },
   },
+  ForumCategory: {
+    topics(category) {
+      return category.getTopics();
+    },
+    movie: async category => {
+      const movie = await Movie.findByPk(category.movieId);
+      return movie;
+    },
+  },
+  ForumTopic: {
+    posts(topic) {
+      return topic.getPosts();
+    },
+    user(topic) {
+      return topic.getUser();
+    },
+    category(topic) {
+      return topic.getForumCategory();
+    },
+  },
+  ForumPost: {
+    user(post) {
+      return post.getUser();
+    },
+  },
   Query: {
+    forumTopics: async (_, { categoryId }) => {
+      // if (args.categoryId) {
+      //   return ForumCategory.findByPk(categoryId).then(category => {
+      //     return category.getTopics();
+      //   });
+      // }
+
+      return ForumTopic.findAll();
+    },
+    forumCategories: async (_, args) => {
+      return ForumCategory.findAll();
+    },
+    forumCategory: async (_, args) => {
+      return ForumCategory.findByPk(args.id);
+    },
+    forumTopic: async (_, args) => {
+      return ForumTopic.findByPk(args.id);
+    },
     allMoviesCursor: async (_, { after, first }) => {
       let movies = [];
 
@@ -376,6 +441,63 @@ export const resolvers = {
     serverTime: () => new Date(),
   },
   Mutation: {
+    addForumCategory: authenticated(async (root, args, context) => {
+      const category = await ForumCategory.create({
+        title: args.title,
+      });
+
+      return category;
+    }),
+    addForumTopic: authenticated(async (root, args, context) => {
+      if (!args.categoryId) {
+        throw new Error('No category provided.');
+      }
+
+      if (!context.user.id) {
+        throw new Error('Invalid user ID.');
+      }
+
+      const category = await ForumCategory.findByPk(args.categoryId);
+
+      if (!category) {
+        throw new Error('Category not found.');
+      }
+
+      const topic = await ForumTopic.create({
+        title: args.title,
+        message: args.message,
+      });
+
+      await topic.setUser(context.user.id);
+      await category.addTopic(topic);
+
+      return topic;
+    }),
+    addForumPost: authenticated(async (root, args, context) => {
+      if (!args.topicId) {
+        throw new Error('No topic ID provided.');
+      }
+
+      if (!context.user.id) {
+        throw new Error('Invalid user ID.');
+      }
+
+      const topic = await ForumTopic.findByPk(args.topicId);
+
+      if (!topic) {
+        throw new Error('Topic not found.');
+      }
+
+      const post = await ForumPost.create({
+        message: args.message,
+      });
+
+      await post.setUser(context.user.id);
+
+      await topic.addPost(post);
+
+      return post;
+    }),
     addAuthor: async (root, args) => {
       const author = await Author.create({
         firstName: args.firstName,
