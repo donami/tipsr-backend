@@ -86,7 +86,11 @@ const app = new Koa();
 
 // const origin = process.env.CLIENT_URL || 'http://localhost:3000';
 
-const whitelist = ['http://spot-movie.com', 'http://www.spot-movie.com'];
+const whitelist = [
+  'http://spot-movie.com',
+  'http://www.spot-movie.com',
+  'http://18.216.230.185',
+];
 
 function checkOriginAgainstWhitelist(ctx) {
   const requestOrigin = ctx.accept.headers.origin;
