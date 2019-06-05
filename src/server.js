@@ -1,3 +1,5 @@
+import 'babel-polyfill';
+
 import Koa from 'koa';
 import { ApolloServer } from 'apollo-server-koa';
 // import cors from 'cors';
