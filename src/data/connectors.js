@@ -206,6 +206,10 @@ if (!production) {
 
     return Promise.resolve();
   });
+} else {
+  db.sync({ force: false }).then(() => {
+    console.log('DB Synced');
+  });
 }
 
 export {
