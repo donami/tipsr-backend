@@ -88,7 +88,7 @@ export const resolvers = {
   },
   ForumCategory: {
     topics(category) {
-      return category.getTopics();
+      return category.getTopics({ order: [['id', 'DESC']] });
     },
     movie: async category => {
       const movie = await Movie.findByPk(category.movieId);
@@ -444,6 +444,7 @@ export const resolvers = {
     addForumCategory: authenticated(async (root, args, context) => {
       const category = await ForumCategory.create({
         title: args.title,
+        description: args.description || '',
       });
 
       return category;
@@ -495,6 +496,11 @@ export const resolvers = {
       await post.setUser(context.user.id);
 
       await topic.addPost(post);
+
+      const category = await topic.getForumCategory();
+      await category.update({
+        posts: category.posts + 1,
+      });
 
       return post;
     }),

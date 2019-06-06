@@ -86,10 +86,13 @@ export const typeDefs = gql`
   type ForumCategory {
     id: Int!
     title: String!
+    description: String
     views: Int!
     posts: Int!
     topics: [ForumTopic]
     movie: Movie
+    createdAt: String
+    updatedAt: String
   }
 
   type ForumTopic {
@@ -223,7 +226,7 @@ export const typeDefs = gql`
   }
 
   type Mutation {
-    addForumCategory(title: String!): ForumCategory
+    addForumCategory(title: String!, description: String): ForumCategory
     addForumTopic(
       title: String!
       message: String!

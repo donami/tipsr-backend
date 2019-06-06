@@ -53,12 +53,17 @@ const ListModel = db.define('list', {
   title: { type: Sequelize.STRING },
 });
 
-const ForumCategoryModel = db.define('forumCategory', {
-  title: { type: Sequelize.STRING },
-  views: { type: Sequelize.INTEGER, defaultValue: 0 },
-  posts: { type: Sequelize.INTEGER, defaultValue: 0 },
-  // topics: { type: Sequelize.STRING },
-});
+const ForumCategoryModel = db.define(
+  'forumCategory',
+  {
+    title: { type: Sequelize.STRING },
+    description: { type: Sequelize.STRING },
+    views: { type: Sequelize.INTEGER, defaultValue: 0 },
+    posts: { type: Sequelize.INTEGER, defaultValue: 0 },
+    // topics: { type: Sequelize.STRING },
+  },
+  { timestamps: true }
+);
 
 const ForumTopicModel = db.define(
   'forumTopic',
@@ -161,6 +166,7 @@ if (!production) {
     });
     const forumCat = await ForumCategory.create({
       title: 'First forum category',
+      description: 'With a description',
     });
 
     await _forumTopic.setUser(secondUser);
