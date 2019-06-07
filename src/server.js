@@ -90,8 +90,10 @@ const app = new Koa();
 
 const whitelist = [
   'http://spot-movie.com',
+  'http://localhost:3030',
   'http://www.spot-movie.com',
   'http://18.216.230.185',
+  'http://18.216.230.185:3030',
 ];
 
 function checkOriginAgainstWhitelist(ctx) {
