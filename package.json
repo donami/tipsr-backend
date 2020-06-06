@@ -3,7 +3,7 @@
     "@babel/cli": "^7.4.4",
     "Buffer": "^0.0.0",
     "apollo-server": "^2.4.8",
-    "apollo-server-express": "^2.4.8",
+    "apollo-server-express": "^2.14.2",
     "apollo-server-koa": "^2.4.8",
     "babel-cli": "^6.26.0",
     "babel-polyfill": "^6.26.0",
